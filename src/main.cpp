@@ -2,25 +2,25 @@
 #include <Servo.h>
 
 #define POT A0
-#define BASE_PIN 3 // 180 = esquerda; 0 = direita;
-#define OMBRO_PIN 5 // 40 = trás; 150 = frente;
-#define CTVL_PIN 6 // 40 = em baixo; 110 = em cima;
-#define GARRA_PIN 9 // 180 = fechada; 50 = 100% aberta (90 graus);
-
+#define BASE_PIN 3
+#define OMBRO_PIN 5
+#define CTVL_PIN 6
+#define GARRA_PIN 9
 #define EQP_1_PIN 2
 #define EQP_3_PIN 7
 #define EQP_4_PIN 8
-
 #define PC_PIN 10
 
-const unsigned int WRITE_DELAY = 10;
-const unsigned int P0[4] = {90, 75, 75, 35}; // 90 graus em cima, garra aberta; OBS.: garra talvez seja desnecessário no array
-const unsigned int P1[4] = {90, 75, 75, 35};
-const unsigned int P2[4] = {90, 75, 75, 35};
-const unsigned int P3[4] = {90, 75, 75, 35};
-const unsigned int P4[4] = {90, 75, 75, 35};
-const unsigned int P5[4] = {90, 75, 75, 35};
-const unsigned int P6[4] = {90, 75, 75, 35};
+const unsigned int P0[3] = {105, 85, 115};
+const unsigned int P1[3] = {105, 110, 115};
+const unsigned int P2[3] = {105, 150, 40};
+const unsigned int P3[3] = {1, 150, 115};
+const unsigned int P4[3] = {1, 150, 40};
+const unsigned int GARRA_ABERTA = 35;
+const unsigned int GARRA_FECHADA = 95;
+const unsigned int WRITE_DELAY = 25;
+
+bool garraAberta = false;
 
 Servo base = Servo();
 Servo ombro = Servo();
@@ -28,7 +28,10 @@ Servo cotovelo = Servo();
 Servo garra = Servo();
 Servo servos[4] = {base, ombro, cotovelo, garra};
 
-bool garraAberta = false;
+void write(Servo, unsigned int, unsigned int);
+void posicao(const unsigned int *);
+void abrirGarra();
+void fecharGarra();
 
 void setup() {
   Serial.begin(9600);
@@ -44,45 +47,63 @@ void setup() {
   cotovelo.attach(CTVL_PIN);
   garra.attach(GARRA_PIN);
 
-  garra.write(35); // garra inicia aberta; isso é importante para a função write() (por conta do servo.read());
-  posicao(P0); // home
+  Serial.println("P0 setup");
+  base.write(P0[0]);
+  ombro.write(P0[1]);
+  cotovelo.write(P0[2]);
+  garra.write(GARRA_ABERTA);
+
+  Serial.println("Delay 3s");
+  delay(3000);
 }
 
 void loop() {
-  bool sinalEquipe1 = digitalRead(EQP_1_PIN);
-  if (!sinalEquipe1){
-    return;
-  }
+  abrirGarra();
+  Serial.println("P1");
+  posicao(P1);
+  delay(1000);
 
-  bool temPeca1 = false;
-  while (!temPeca1){
-    temPeca1 = digitalRead(PC_PIN);
-  }
+  Serial.println("P2");
+  posicao(P2);
+  delay(1000);
+  fecharGarra();
 
-  bool peca1Entregue = pegarPeca1();
+  Serial.println("P1");
+  posicao(P1);
+  delay(1000);
 
-  bool temPeca2 = false;
-  while (!temPeca2){
-    temPeca2 = digitalRead(PC_PIN);
-  }
+  Serial.println("Indo P3");
+  posicao(P3);
+  delay(1000);
 
-  bool peca2Entregue = pegarPeca2();
+  Serial.println("P4");
+  posicao(P4);
+  delay(1000);
 
-  // retorna pro home
-  posicao(P0);
+  abrirGarra();
+  delay(1000);
+
+  Serial.println("P3");
+  posicao(P3);
+  delay(1000);
+
+  Serial.println("P1");
+  posicao(P1);
   delay(1000);
 }
 
 void write(Servo servo, unsigned int angle, unsigned int delayMs = WRITE_DELAY){
-  int lastWrite = servo.read();
+  unsigned int lastWrite = servo.read();
 
   if (angle == lastWrite){
     return;
   }
   
   if (lastWrite < angle){
-    int last = lastWrite;
-    for (int i = last; i <= angle; i++ ){
+    Serial.println("Aumentando ângulo");
+    for (unsigned int i = lastWrite; i <= angle; i++ ){
+      Serial.print("i = ");
+      Serial.println(i);
       servo.write(i);
       delay(delayMs);
     }
@@ -91,8 +112,10 @@ void write(Servo servo, unsigned int angle, unsigned int delayMs = WRITE_DELAY){
   }
 
   if (lastWrite > angle){
-    int last = lastWrite;
-    for (int i = last; i >= angle; i-- ){
+    Serial.println("Diminuindo ângulo");
+    for (unsigned int i = lastWrite; i >= angle; i-- ){
+      Serial.print("i = ");
+      Serial.println(i);
       servo.write(i);
       delay(delayMs);
     }
@@ -101,88 +124,27 @@ void write(Servo servo, unsigned int angle, unsigned int delayMs = WRITE_DELAY){
   }
 }
 
-void posicao(const unsigned int p[4], unsigned int delayMs = 1000){
-  for (int i = 0; i <= 4; i++){
+void posicao(const unsigned int p[3]){
+  for (int i = 0; i <= 2; i++){
     Servo s = servos[i];
     write(s, p[i]);
   }
-
-  delay(delayMs);
 }
 
-void fecharGarra(unsigned int delayMs = WRITE_DELAY){
+void fecharGarra(){
   if (!garraAberta){
     return;
   }
 
-  write(garra, 180, delayMs);
+  write(garra, GARRA_FECHADA);
   garraAberta = false;
 }
 
-void abrirGarra(unsigned int delayMs = WRITE_DELAY){
+void abrirGarra(){
   if (garraAberta){
     return;
   }
 
-  write(garra, 35, delayMs);
+  write(garra, GARRA_ABERTA);
   garraAberta = true;
-}
-
-bool sinalizaEquipe(unsigned int equipePin, unsigned int delayMs = WRITE_DELAY){
-  bool retorno = false;
-
-  digitalWrite(equipePin, HIGH);
-  delay(delayMs);
-  digitalWrite(equipePin, LOW);
-
-  while (!retorno){
-    retorno = digitalRead(equipePin);
-  }
-}
-
-bool pegarPeca1(){
-  posicao(P1);
-  posicao(P2);
-
-  fecharGarra();
-
-  posicao(P1);
-  posicao(P3);
-  posicao(P4);
-  abrirGarra();
-  posicao(P3);
-
-  // sinaliza equipe 3 que tem peça 1
-  bool retorno = sinalizaEquipe(EQP_3_PIN);
-  return retorno;
-}
-
-bool pegarPeca2(){
-  posicao(P5);
-  delay(1000);
-
-  posicao(P6);
-  delay(1000);
-
-  fecharGarra();
-  delay(1000);
-
-  posicao(P5);
-  delay(1000);
-
-  posicao(P3);
-  delay(1000);
-
-  posicao(P4);
-  delay(1000);
-
-  abrirGarra();
-  delay(1000);
-
-  posicao(P3);
-  delay(1000);
-
-  // sinaliza equipe 3 que tem peça 2
-  bool retorno = sinalizaEquipe(EQP_3_PIN);
-  return retorno;
 }
