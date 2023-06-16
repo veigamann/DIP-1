@@ -1,15 +1,10 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-#define POT A0
 #define BASE_PIN 3
 #define OMBRO_PIN 5
 #define CTVL_PIN 6
 #define GARRA_PIN 9
-#define EQP_1_PIN 2
-#define EQP_3_PIN 7
-#define EQP_4_PIN 8
-#define PC_PIN 10
 
 const unsigned int P0[3] = {105, 85, 115};
 const unsigned int P1[3] = {105, 110, 115};
@@ -26,9 +21,9 @@ Servo base = Servo();
 Servo ombro = Servo();
 Servo cotovelo = Servo();
 Servo garra = Servo();
-Servo servos[4] = {base, ombro, cotovelo, garra};
+Servo servos[3] = {base, ombro, cotovelo};
 
-void write(Servo, unsigned int, unsigned int);
+void write(Servo, unsigned int, unsigned int = WRITE_DELAY);
 void posicao(const unsigned int *);
 void abrirGarra();
 void fecharGarra();
@@ -36,7 +31,6 @@ void fecharGarra();
 void setup() {
   Serial.begin(9600);
 
-  pinMode(POT, INPUT);
   pinMode(BASE_PIN, OUTPUT);
   pinMode(OMBRO_PIN, OUTPUT);
   pinMode(CTVL_PIN, OUTPUT);
@@ -72,7 +66,7 @@ void loop() {
   posicao(P1);
   delay(1000);
 
-  Serial.println("Indo P3");
+  Serial.println("P3");
   posicao(P3);
   delay(1000);
 
@@ -92,7 +86,7 @@ void loop() {
   delay(1000);
 }
 
-void write(Servo servo, unsigned int angle, unsigned int delayMs = WRITE_DELAY){
+void write(Servo servo, unsigned int angle, unsigned int writeDelay){
   unsigned int lastWrite = servo.read();
 
   if (angle == lastWrite){
@@ -100,24 +94,18 @@ void write(Servo servo, unsigned int angle, unsigned int delayMs = WRITE_DELAY){
   }
   
   if (lastWrite < angle){
-    Serial.println("Aumentando ângulo");
     for (unsigned int i = lastWrite; i <= angle; i++ ){
-      Serial.print("i = ");
-      Serial.println(i);
       servo.write(i);
-      delay(delayMs);
+      delay(writeDelay);
     }
 
     return;
   }
 
   if (lastWrite > angle){
-    Serial.println("Diminuindo ângulo");
     for (unsigned int i = lastWrite; i >= angle; i-- ){
-      Serial.print("i = ");
-      Serial.println(i);
       servo.write(i);
-      delay(delayMs);
+      delay(writeDelay);
     }
 
     return;
