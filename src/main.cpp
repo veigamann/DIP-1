@@ -1,18 +1,21 @@
-#include <Arduino.h>
+#include <arduino.h>
 #include <Servo.h>
 
 #define BASE_PIN 3
 #define OMBRO_PIN 5
 #define CTVL_PIN 6
 #define GARRA_PIN 9
+#define EQP_1 2
+#define EQP_3 4
+#define EQP_4 7
 
-const unsigned int P0[3] = {105, 85, 115};
-const unsigned int P1[3] = {105, 110, 115};
-const unsigned int P2[3] = {105, 150, 40};
-const unsigned int P3[3] = {1, 150, 115};
-const unsigned int P4[3] = {1, 150, 40};
-const unsigned int GARRA_ABERTA = 35;
-const unsigned int GARRA_FECHADA = 95;
+const unsigned int P0[3] = {90, 85, 115};
+const unsigned int P1[3] = {90, 115, 115};
+const unsigned int P2[3] = {90, 50, 160};
+const unsigned int P3[3] = {1, 115, 115};
+const unsigned int P4[3] = {1, 75, 170};
+const unsigned int GARRA_ABERTA = 25;
+const unsigned int GARRA_FECHADA = 100;
 const unsigned int WRITE_DELAY = 25;
 
 bool garraAberta = false;
@@ -21,7 +24,7 @@ Servo base = Servo();
 Servo ombro = Servo();
 Servo cotovelo = Servo();
 Servo garra = Servo();
-Servo servos[3] = {base, ombro, cotovelo};
+Servo servos[3] = {base, cotovelo, ombro};
 
 void write(Servo, unsigned int, unsigned int = WRITE_DELAY);
 void posicao(const unsigned int *);
@@ -46,44 +49,41 @@ void setup() {
   ombro.write(P0[1]);
   cotovelo.write(P0[2]);
   garra.write(GARRA_ABERTA);
+  garraAberta = true;
 
-  Serial.println("Delay 3s");
-  delay(3000);
+  Serial.println("Delay 1s");
+  delay(500);
 }
 
+int DELAY = 500;
+
 void loop() {
-  abrirGarra();
-  Serial.println("P1");
   posicao(P1);
-  delay(1000);
+  delay(DELAY);
 
-  Serial.println("P2");
   posicao(P2);
-  delay(1000);
+  delay(DELAY);
+
   fecharGarra();
+  delay(DELAY);
 
-  Serial.println("P1");
   posicao(P1);
-  delay(1000);
+  delay(DELAY);
 
-  Serial.println("P3");
   posicao(P3);
-  delay(1000);
+  delay(DELAY);
 
-  Serial.println("P4");
   posicao(P4);
-  delay(1000);
+  delay(DELAY);
 
   abrirGarra();
-  delay(1000);
+  delay(DELAY);
 
-  Serial.println("P3");
   posicao(P3);
-  delay(1000);
+  delay(DELAY);
 
-  Serial.println("P1");
   posicao(P1);
-  delay(1000);
+  delay(DELAY);
 }
 
 void write(Servo servo, unsigned int angle, unsigned int writeDelay){
@@ -124,6 +124,7 @@ void fecharGarra(){
     return;
   }
 
+  Serial.println("Fechando garra");
   write(garra, GARRA_FECHADA);
   garraAberta = false;
 }
@@ -133,6 +134,7 @@ void abrirGarra(){
     return;
   }
 
+  Serial.println("Abrindo garra");
   write(garra, GARRA_ABERTA);
   garraAberta = true;
 }
